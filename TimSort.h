@@ -204,7 +204,7 @@ private:
     void insertionSort(DynamicArray<T>& arr, int left, int right, bool ascending = true)
     {
         for (int i = left + 1; i <= right; i++) {
-            int temp = arr[i];
+            T temp = arr[i];
             int j = i - 1;
             if (ascending) {
                 while (j >= left && arr[j] > temp) {
