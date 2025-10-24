@@ -6,7 +6,201 @@
 template<typename T>
 class Timsort{
 private:
-    const int RUN = 32;
+    const int MIN_GALLOP = 7;  
+    int minGallop = MIN_GALLOP;
+    
+    int computeMinrun(int n) {
+        int r = 0;  
+        while (n >= 64) {
+            r |= n & 1;
+            n >>= 1;
+        }
+        return n + r;
+    }
+
+    void reverse(DynamicArray<T>& arr, int left, int right) {
+        while (left < right) {
+            std::swap(arr[left], arr[right]);
+            left++;
+            right--;
+        }
+    }
+
+    int findAscendingRun(DynamicArray<T>& arr, int start, int end, bool ascending) {
+        if (start >= end) return 1;
+        
+        int runLength = 1;
+        if (ascending) {
+            while (start + runLength < end && arr[start + runLength - 1] <= arr[start + runLength]) {
+                runLength++;
+            }
+        } else {
+            while (start + runLength < end && arr[start + runLength - 1] >= arr[start + runLength]) {
+                runLength++;
+            }
+        }
+        return runLength;
+    }
+
+    int findDescendingRun(DynamicArray<T>& arr, int start, int end, bool ascending) {
+        if (start >= end) return 1;
+        
+        int runLength = 1;
+        if (ascending) {
+            while (start + runLength < end && arr[start + runLength - 1] > arr[start + runLength]) {
+                runLength++;
+            }
+        } else {
+            while (start + runLength < end && arr[start + runLength - 1] < arr[start + runLength]) {
+                runLength++;
+            }
+        }
+        return runLength;
+    } 
+
+    int gallopRight(const T& key, DynamicArray<T>& array, int base, int len, int hint, bool ascending) {
+        int lastOfs = 0;
+        int ofs = 1;
+        
+        if (ascending) {
+            if (key > array[base + hint]) {
+                int maxOfs = len - hint;
+                while (ofs < maxOfs && key > array[base + hint + ofs]) {
+                    lastOfs = ofs;
+                    ofs = (ofs << 1) + 1;
+                    if (ofs <= 0) ofs = maxOfs;
+                }
+                if (ofs > maxOfs) ofs = maxOfs;
+                lastOfs += hint;
+                ofs += hint;
+            } else {
+                int maxOfs = hint + 1;
+                while (ofs < maxOfs && key <= array[base + hint - ofs]) {
+                    lastOfs = ofs;
+                    ofs = (ofs << 1) + 1;
+                    if (ofs <= 0) ofs = maxOfs;
+                }
+                if (ofs > maxOfs) ofs = maxOfs;
+                int tmp = lastOfs;
+                lastOfs = hint - ofs;
+                ofs = hint - tmp;
+            }
+        } else {
+            if (key < array[base + hint]) {
+                int maxOfs = len - hint;
+                while (ofs < maxOfs && key < array[base + hint + ofs]) {
+                    lastOfs = ofs;
+                    ofs = (ofs << 1) + 1;
+                    if (ofs <= 0) ofs = maxOfs;
+                }
+                if (ofs > maxOfs) ofs = maxOfs;
+                lastOfs += hint;
+                ofs += hint;
+            } else {
+                int maxOfs = hint + 1;
+                while (ofs < maxOfs && key >= array[base + hint - ofs]) {
+                    lastOfs = ofs;
+                    ofs = (ofs << 1) + 1;
+                    if (ofs <= 0) ofs = maxOfs;
+                }
+                if (ofs > maxOfs) ofs = maxOfs;
+                int tmp = lastOfs;
+                lastOfs = hint - ofs;
+                ofs = hint - tmp;
+            }
+        }
+        
+        lastOfs++;
+        while (lastOfs < ofs) {
+            int m = lastOfs + ((ofs - lastOfs) >> 1);
+            if (ascending) {
+                if (key > array[base + m]) {
+                    lastOfs = m + 1;
+                } else {
+                    ofs = m;
+                }
+            } else {
+                if (key < array[base + m]) {
+                    lastOfs = m + 1;
+                } else {
+                    ofs = m;
+                }
+            }
+        }
+        return ofs;
+    }
+    
+    int gallopLeft(const T& key, DynamicArray<T>& array, int base, int len, int hint, bool ascending) {
+        int lastOfs = 0;
+        int ofs = 1;
+        
+        if (ascending) {
+            if (key < array[base + hint]) {
+                int maxOfs = hint + 1;
+                while (ofs < maxOfs && key < array[base + hint - ofs]) {
+                    lastOfs = ofs;
+                    ofs = (ofs << 1) + 1;
+                    if (ofs <= 0) ofs = maxOfs;
+                }
+                if (ofs > maxOfs) ofs = maxOfs;
+                int tmp = lastOfs;
+                lastOfs = hint - ofs;
+                ofs = hint - tmp;
+            } else {
+                int maxOfs = len - hint;
+                while (ofs < maxOfs && key >= array[base + hint + ofs]) {
+                    lastOfs = ofs;
+                    ofs = (ofs << 1) + 1;
+                    if (ofs <= 0) ofs = maxOfs;
+                }
+                if (ofs > maxOfs) ofs = maxOfs;
+                lastOfs += hint;
+                ofs += hint;
+            }
+        } else {
+            if (key > array[base + hint]) {
+                int maxOfs = hint + 1;
+                while (ofs < maxOfs && key > array[base + hint - ofs]) {
+                    lastOfs = ofs;
+                    ofs = (ofs << 1) + 1;
+                    if (ofs <= 0) ofs = maxOfs;
+                }
+                if (ofs > maxOfs) ofs = maxOfs;
+                int tmp = lastOfs;
+                lastOfs = hint - ofs;
+                ofs = hint - tmp;
+            } else {
+                int maxOfs = len - hint;
+                while (ofs < maxOfs && key <= array[base + hint + ofs]) {
+                    lastOfs = ofs;
+                    ofs = (ofs << 1) + 1;
+                    if (ofs <= 0) ofs = maxOfs;
+                }
+                if (ofs > maxOfs) ofs = maxOfs;
+                lastOfs += hint;
+                ofs += hint;
+            }
+        }
+        lastOfs++;
+        while (lastOfs < ofs) {
+            int m = lastOfs + ((ofs - lastOfs) >> 1);
+            if (ascending) {
+                if (key < array[base + m]) {
+                    ofs = m;
+                } else {
+                    lastOfs = m + 1;
+                }
+            } else {
+                if (key > array[base + m]) {
+                    ofs = m;
+                } else {
+                    lastOfs = m + 1;
+                }
+            }
+        }
+        return ofs;
+    }
+    
     void insertionSort(DynamicArray<T>& arr, int left, int right, bool ascending = true)
     {
         for (int i = left + 1; i <= right; i++) {
@@ -29,7 +223,6 @@ private:
 
     void merge(DynamicArray<T>& arr, int l, int m, int r, bool ascending = true)
     {
-
         int len1 = m - l + 1, len2 = r - m;
         T* left = new T[len1];
         T* right = new T[len2];
@@ -41,25 +234,75 @@ private:
         int i = 0;
         int j = 0;
         int k = l;
+        
+        int leftWins = 0;
+        int rightWins = 0;
+        bool galloping = false;
 
         while (i < len1 && j < len2) {
-            if (ascending) {
-                if (left[i] <= right[j]) {
-                    arr[k] = left[i];
-                    i++;
+            if (!galloping) {
+                if (ascending) {
+                    if (left[i] <= right[j]) {
+                        arr[k] = left[i];
+                        i++;
+                        leftWins++;
+                        rightWins = 0;
+                    }
+                    else {
+                        arr[k] = right[j];
+                        j++;
+                        rightWins++;
+                        leftWins = 0;
+                    }
+                } else {
+                    if (left[i] >= right[j]) {
+                        arr[k] = left[i];
+                        i++;
+                        leftWins++;
+                        rightWins = 0;
+                    }
+                    else {
+                        arr[k] = right[j];
+                        j++;
+                        rightWins++;
+                        leftWins = 0;
+                    }
                 }
-                else {
-                    arr[k] = right[j];
-                    j++;
+                
+                if (leftWins >= minGallop || rightWins >= minGallop) {
+                    galloping = true;
                 }
             } else {
-                if (left[i] >= right[j]) {
-                    arr[k] = left[i];
-                    i++;
-                }
-                else {
-                    arr[k] = right[j];
-                    j++;
+                if (leftWins >= minGallop) {
+                    DynamicArray<T> rightArray;
+                    for (int x = 0; x < len2; x++) {
+                        rightArray.push_back(right[x]);
+                    }
+                    int skip = gallopRight(left[i], rightArray, 0, len2, j, ascending);
+                    for (int x = j; x < j + skip; x++) {
+                        arr[k] = right[x];
+                        k++;
+                    }
+                    j += skip;
+                    leftWins = 0;
+                    rightWins = 0;
+                } else if (rightWins >= minGallop) {
+                    DynamicArray<T> leftArray;
+                    for (int x = 0; x < len1; x++) {
+                        leftArray.push_back(left[x]);
+                    }
+                    int skip = gallopLeft(right[j], leftArray, 0, len1, i, ascending);
+                    for (int x = i; x < i + skip; x++) {
+                        arr[k] = left[x];
+                        k++;
+                    }
+                    i += skip;
+                    leftWins = 0;
+                    rightWins = 0;
+                } else {
+                    galloping = false;
+                    minGallop++;
+                    continue;
                 }
             }
             k++;
@@ -76,16 +319,51 @@ private:
             k++;
             j++;
         }
+        
+        if (minGallop < 1) {
+            minGallop = 1;
+        } else if (minGallop > MIN_GALLOP) {
+            minGallop = MIN_GALLOP;
+        }
+        
         delete[] left;
         delete[] right;
     }
 public:
 void sort(DynamicArray<T>& arr, int n, bool ascending = true)
 {
+    if (n < 2) return;
+    
+    int minrun = computeMinrun(n);
+    int i = 0;
+    while (i < n) {
+        int ascendingRun = findAscendingRun(arr, i, n, ascending);
+        if (ascendingRun < minrun && i + ascendingRun < n) {
+            int descendingRun = findDescendingRun(arr, i + ascendingRun, n, ascending);
+            int totalRun = ascendingRun + descendingRun;
 
-    for (int i = 0; i < n; i += RUN)
-        insertionSort(arr, i, std::min((i + RUN - 1), (n - 1)), ascending);
-    for (int size = RUN; size < n; size = 2 * size) {
+            if (totalRun < minrun) {
+                totalRun = std::min(minrun, n - i);
+            }
+
+            if (descendingRun > 0) {
+                reverse(arr, i + ascendingRun, i + totalRun - 1);
+            }
+
+            if (totalRun > ascendingRun) {
+                insertionSort(arr, i, i + totalRun - 1, ascending);
+            }
+            
+            i += totalRun;
+        } else {
+            if (ascendingRun < minrun) {
+                ascendingRun = std::min(minrun, n - i);
+                insertionSort(arr, i, i + ascendingRun - 1, ascending);
+            }
+            i += ascendingRun;
+        }
+    }
+    for (int size = minrun; size < n; size = 2 * size) {
         for (int left = 0; left < n; left += 2 * size) {
             int mid = left + size - 1;
             int right = std::min((left + 2 * size - 1), (n - 1));
