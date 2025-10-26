@@ -77,13 +77,10 @@ int main() {
                                 cin.clear();
                                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
                             }
-                            cin.clear();
-                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
                             
-                            cout << "Input " << size << " integers:" << endl;
+                            cout << "Input " << size << " integers: ";
                             for (int i = 0; i < size; i++) {
                                 int value;
-                                cout << "Elem " << (i + 1) << ": ";
                                 while (!(cin >> value)) {
                                     cout << "Error! Input integer: ";
                                     cin.clear();
@@ -91,27 +88,28 @@ int main() {
                                 }
                                 intArray.push_back(value);
                             }
+                            cin.clear();
+                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
                             break;
                             
                         case 2: 
                             charArray.clear();
                             
-                            cout << "\nInpur array size: ";
+                            cout << "\nInput array size: ";
                             while (!(cin >> size) || size <= 0) {
                                 cout << "Error! Input a positive number: ";
                                 cin.clear();
                                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
                             }
-                            cin.clear();
-                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
                             
-                            cout << "Input " << size << " chars:" << endl;
+                            cout << "Input " << size << " chars: ";
                             for (int i = 0; i < size; i++) {
                                 char value;
-                                cout << "Elem " << (i + 1) << ": ";
                                 cin >> value;
                                 charArray.push_back(value);
                             }
+                            cin.clear();
+                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
                             break;
                             
                         case 3: 
@@ -119,17 +117,14 @@ int main() {
                             
                             cout << "\nInput array size: ";
                             while (!(cin >> size) || size <= 0) {
-                                cout << "Error! Input a positive number:  ";
+                                cout << "Error! Input a positive number: ";
                                 cin.clear();
                                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
                             }
-                            cin.clear();
-                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
                             
-                            cout << "Input " << size << " float numbers:" << endl;
+                            cout << "Input " << size << " float numbers: ";
                             for (int i = 0; i < size; i++) {
                                 float value;
-                                cout << "Elem " << (i + 1) << ": ";
                                 while (!(cin >> value)) {
                                     cout << "Error! Input float number: ";
                                     cin.clear();
@@ -137,6 +132,8 @@ int main() {
                                 }
                                 floatArray.push_back(value);
                             }
+                            cin.clear();
+                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
                             break;
                             
                         case 4: 
@@ -144,17 +141,14 @@ int main() {
                             
                             cout << "\nInput array size: ";
                             while (!(cin >> size) || size <= 0) {
-                                cout << "Error! Input a positive number:  ";
+                                cout << "Error! Input a positive number: ";
                                 cin.clear();
                                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
                             }
-                            cin.clear();
-                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
                             
-                            cout << "Input " << size << " double numbers:" << endl;
+                            cout << "Input " << size << " double numbers: ";
                             for (int i = 0; i < size; i++) {
                                 double value;
-                                cout << "Elem " << (i + 1) << ": ";
                                 while (!(cin >> value)) {
                                     cout << "Error! Input double number: ";
                                     cin.clear();
@@ -162,6 +156,8 @@ int main() {
                                 }
                                 doubleArray.push_back(value);
                             }
+                            cin.clear();
+                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
                             break;
                     }
                     arrayCreated = true;
