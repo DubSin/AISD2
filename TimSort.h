@@ -31,11 +31,15 @@ private:
         
         int runLength = 1;
         if (ascending) {
-            while (start + runLength < end && arr[start + runLength - 1] <= arr[start + runLength]) {
+            while (start + runLength < end && start + runLength - 1 < arr.get_size() && 
+                   start + runLength < arr.get_size() && 
+                   arr[start + runLength - 1] <= arr[start + runLength]) {
                 runLength++;
             }
         } else {
-            while (start + runLength < end && arr[start + runLength - 1] >= arr[start + runLength]) {
+            while (start + runLength < end && start + runLength - 1 < arr.get_size() && 
+                   start + runLength < arr.get_size() && 
+                   arr[start + runLength - 1] >= arr[start + runLength]) {
                 runLength++;
             }
         }
@@ -47,11 +51,15 @@ private:
         
         int runLength = 1;
         if (ascending) {
-            while (start + runLength < end && arr[start + runLength - 1] > arr[start + runLength]) {
+            while (start + runLength < end && start + runLength - 1 < arr.get_size() && 
+                   start + runLength < arr.get_size() && 
+                   arr[start + runLength - 1] > arr[start + runLength]) {
                 runLength++;
             }
         } else {
-            while (start + runLength < end && arr[start + runLength - 1] < arr[start + runLength]) {
+            while (start + runLength < end && start + runLength - 1 < arr.get_size() && 
+                   start + runLength < arr.get_size() && 
+                   arr[start + runLength - 1] < arr[start + runLength]) {
                 runLength++;
             }
         }
@@ -59,6 +67,8 @@ private:
     } 
 
     int gallopRight(const T& key, DynamicArray<T>& array, int base, int len, int hint, bool ascending) {
+        if (len <= 0 || hint < 0 || hint >= len) return 0;
+        
         int lastOfs = 0;
         int ofs = 1;
         
@@ -131,6 +141,8 @@ private:
     }
     
     int gallopLeft(const T& key, DynamicArray<T>& array, int base, int len, int hint, bool ascending) {
+        if (len <= 0 || hint < 0 || hint >= len) return 0;
+        
         int lastOfs = 0;
         int ofs = 1;
         
@@ -245,12 +257,14 @@ private:
                     if (left[i] <= right[j]) {
                         arr[k] = left[i];
                         i++;
+                        k++;
                         leftWins++;
                         rightWins = 0;
                     }
                     else {
                         arr[k] = right[j];
                         j++;
+                        k++;
                         rightWins++;
                         leftWins = 0;
                     }
@@ -258,12 +272,14 @@ private:
                     if (left[i] >= right[j]) {
                         arr[k] = left[i];
                         i++;
+                        k++;
                         leftWins++;
                         rightWins = 0;
                     }
                     else {
                         arr[k] = right[j];
                         j++;
+                        k++;
                         rightWins++;
                         leftWins = 0;
                     }
@@ -274,26 +290,34 @@ private:
                 }
             } else {
                 if (leftWins >= minGallop) {
+                    // Создаем временный массив для gallopRight
                     DynamicArray<T> rightArray;
+                    rightArray.clear();
                     for (int x = 0; x < len2; x++) {
                         rightArray.push_back(right[x]);
                     }
                     int skip = gallopRight(left[i], rightArray, 0, len2, j, ascending);
-                    for (int x = j; x < j + skip; x++) {
-                        arr[k] = right[x];
+                    // Ограничиваем skip, чтобы не выйти за границы
+                    skip = std::min(skip, len2 - j);
+                    for (int x = 0; x < skip; x++) {
+                        arr[k] = right[j + x];
                         k++;
                     }
                     j += skip;
                     leftWins = 0;
                     rightWins = 0;
                 } else if (rightWins >= minGallop) {
+                    // Создаем временный массив для gallopLeft
                     DynamicArray<T> leftArray;
+                    leftArray.clear();
                     for (int x = 0; x < len1; x++) {
                         leftArray.push_back(left[x]);
                     }
                     int skip = gallopLeft(right[j], leftArray, 0, len1, i, ascending);
-                    for (int x = i; x < i + skip; x++) {
-                        arr[k] = left[x];
+                    // Ограничиваем skip, чтобы не выйти за границы
+                    skip = std::min(skip, len1 - i);
+                    for (int x = 0; x < skip; x++) {
+                        arr[k] = left[i + x];
                         k++;
                     }
                     i += skip;
@@ -305,7 +329,6 @@ private:
                     continue;
                 }
             }
-            k++;
         }
 
         while (i < len1) {
