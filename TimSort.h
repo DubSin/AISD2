@@ -2,12 +2,22 @@
 #define TIMSORT_H
 
 #include "DinamicArray.h"
+#include "Stack.h"
+#include "stdafx.h"
 
 template<typename T>
-class Timsort{
+class Timsort {
 private:
     const int MIN_GALLOP = 7;  
     int minGallop = MIN_GALLOP;
+    
+    struct Run {
+        int start;
+        int length;
+        Run(int s, int len) : start(s), length(len) {}
+    };
+    
+    Stack<Run> runs;
     
     int computeMinrun(int n) {
         int r = 0;  
@@ -26,49 +36,26 @@ private:
         }
     }
 
-    int findAscendingRun(DynamicArray<T>& arr, int start, int end, bool ascending) {
-        if (start >= end) return 1;
-        
-        int runLength = 1;
-        if (ascending) {
-            while (start + runLength < end && start + runLength - 1 < arr.get_size() && 
-                   start + runLength < arr.get_size() && 
-                   arr[start + runLength - 1] <= arr[start + runLength]) {
-                runLength++;
+    void insertionSort(DynamicArray<T>& arr, int left, int right, bool ascending = true) {
+        for (int i = left + 1; i <= right; i++) {
+            T temp = arr[i];
+            int j = i - 1;
+            if (ascending) {
+                while (j >= left && arr[j] > temp) {
+                    arr[j + 1] = arr[j];
+                    j--;
+                }
+            } else {
+                while (j >= left && arr[j] < temp) {
+                    arr[j + 1] = arr[j];
+                    j--;
+                }
             }
-        } else {
-            while (start + runLength < end && start + runLength - 1 < arr.get_size() && 
-                   start + runLength < arr.get_size() && 
-                   arr[start + runLength - 1] >= arr[start + runLength]) {
-                runLength++;
-            }
+            arr[j + 1] = temp;
         }
-        return runLength;
     }
 
-    int findDescendingRun(DynamicArray<T>& arr, int start, int end, bool ascending) {
-        if (start >= end) return 1;
-        
-        int runLength = 1;
-        if (ascending) {
-            while (start + runLength < end && start + runLength - 1 < arr.get_size() && 
-                   start + runLength < arr.get_size() && 
-                   arr[start + runLength - 1] > arr[start + runLength]) {
-                runLength++;
-            }
-        } else {
-            while (start + runLength < end && start + runLength - 1 < arr.get_size() && 
-                   start + runLength < arr.get_size() && 
-                   arr[start + runLength - 1] < arr[start + runLength]) {
-                runLength++;
-            }
-        }
-        return runLength;
-    } 
-
     int gallopRight(const T& key, DynamicArray<T>& array, int base, int len, int hint, bool ascending) {
-        if (len <= 0 || hint < 0 || hint >= len) return 0;
-        
         int lastOfs = 0;
         int ofs = 1;
         
@@ -141,8 +128,6 @@ private:
     }
     
     int gallopLeft(const T& key, DynamicArray<T>& array, int base, int len, int hint, bool ascending) {
-        if (len <= 0 || hint < 0 || hint >= len) return 0;
-        
         int lastOfs = 0;
         int ofs = 1;
         
@@ -193,6 +178,7 @@ private:
                 ofs += hint;
             }
         }
+        
         lastOfs++;
         while (lastOfs < ofs) {
             int m = lastOfs + ((ofs - lastOfs) >> 1);
@@ -212,190 +198,241 @@ private:
         }
         return ofs;
     }
-    
-    void insertionSort(DynamicArray<T>& arr, int left, int right, bool ascending = true)
-    {
-        for (int i = left + 1; i <= right; i++) {
-            T temp = arr[i];
-            int j = i - 1;
-            if (ascending) {
-                while (j >= left && arr[j] > temp) {
-                    arr[j + 1] = arr[j];
-                    j--;
-                }
-            } else {
-                while (j >= left && arr[j] < temp) {
-                    arr[j + 1] = arr[j];
-                    j--;
-                }
-            }
-            arr[j + 1] = temp;
-        }
-    }
 
-    void merge(DynamicArray<T>& arr, int l, int m, int r, bool ascending = true)
-    {
+    void merge(DynamicArray<T>& arr, int l, int m, int r, bool ascending = true) {
         int len1 = m - l + 1, len2 = r - m;
+        
+        
         T* left = new T[len1];
         T* right = new T[len2];
+        
         for (int i = 0; i < len1; i++)
             left[i] = arr[l + i];
         for (int i = 0; i < len2; i++)
             right[i] = arr[m + 1 + i];
 
-        int i = 0;
-        int j = 0;
-        int k = l;
-        
-        int leftWins = 0;
-        int rightWins = 0;
+        int i = 0, j = 0, k = l;
+        int leftWins = 0, rightWins = 0;
         bool galloping = false;
 
         while (i < len1 && j < len2) {
             if (!galloping) {
-                if (ascending) {
-                    if (left[i] <= right[j]) {
-                        arr[k] = left[i];
-                        i++;
-                        k++;
-                        leftWins++;
-                        rightWins = 0;
-                    }
-                    else {
-                        arr[k] = right[j];
-                        j++;
-                        k++;
-                        rightWins++;
-                        leftWins = 0;
-                    }
+                bool condition = ascending ? (left[i] <= right[j]) : (left[i] >= right[j]);
+                
+                if (condition) {
+                    arr[k++] = left[i++];
+                    leftWins++;
+                    rightWins = 0;
                 } else {
-                    if (left[i] >= right[j]) {
-                        arr[k] = left[i];
-                        i++;
-                        k++;
-                        leftWins++;
-                        rightWins = 0;
-                    }
-                    else {
-                        arr[k] = right[j];
-                        j++;
-                        k++;
-                        rightWins++;
-                        leftWins = 0;
-                    }
+                    arr[k++] = right[j++];
+                    rightWins++;
+                    leftWins = 0;
                 }
                 
                 if (leftWins >= minGallop || rightWins >= minGallop) {
                     galloping = true;
+                    minGallop++;
                 }
             } else {
                 if (leftWins >= minGallop) {
-                    // Создаем временный массив для gallopRight
-                    DynamicArray<T> rightArray;
-                    rightArray.clear();
-                    for (int x = 0; x < len2; x++) {
-                        rightArray.push_back(right[x]);
+                    
+                    DynamicArray<T> tempRight;
+                    for (int x = 0; x < len2 - j; x++) {
+                        tempRight.push_back(right[j + x]);
                     }
-                    int skip = gallopRight(left[i], rightArray, 0, len2, j, ascending);
-                    // Ограничиваем skip, чтобы не выйти за границы
+                    
+                    int skip = gallopRight(left[i], tempRight, 0, tempRight.get_size(), 0, ascending);
                     skip = std::min(skip, len2 - j);
+                    
                     for (int x = 0; x < skip; x++) {
-                        arr[k] = right[j + x];
-                        k++;
+                        arr[k++] = right[j + x];
                     }
                     j += skip;
                     leftWins = 0;
-                    rightWins = 0;
+                    galloping = false;
                 } else if (rightWins >= minGallop) {
-                    // Создаем временный массив для gallopLeft
-                    DynamicArray<T> leftArray;
-                    leftArray.clear();
-                    for (int x = 0; x < len1; x++) {
-                        leftArray.push_back(left[x]);
+                    
+                    DynamicArray<T> tempLeft;
+                    for (int x = 0; x < len1 - i; x++) {
+                        tempLeft.push_back(left[i + x]);
                     }
-                    int skip = gallopLeft(right[j], leftArray, 0, len1, i, ascending);
-                    // Ограничиваем skip, чтобы не выйти за границы
+                    
+                    int skip = gallopLeft(right[j], tempLeft, 0, tempLeft.get_size(), 0, ascending);
                     skip = std::min(skip, len1 - i);
+                    
                     for (int x = 0; x < skip; x++) {
-                        arr[k] = left[i + x];
-                        k++;
+                        arr[k++] = left[i + x];
                     }
                     i += skip;
-                    leftWins = 0;
                     rightWins = 0;
+                    galloping = false;
                 } else {
                     galloping = false;
-                    minGallop++;
-                    continue;
                 }
             }
         }
 
-        while (i < len1) {
-            arr[k] = left[i];
-            k++;
-            i++;
-        }
+        
+        while (i < len1) arr[k++] = left[i++];
+        while (j < len2) arr[k++] = right[j++];
 
-        while (j < len2) {
-            arr[k] = right[j];
-            k++;
-            j++;
-        }
-        
-        if (minGallop < 1) {
-            minGallop = 1;
-        } else if (minGallop > MIN_GALLOP) {
-            minGallop = MIN_GALLOP;
-        }
-        
         delete[] left;
         delete[] right;
-    }
-public:
-void sort(DynamicArray<T>& arr, int n, bool ascending = true)
-{
-    if (n < 2) return;
+        
     
-    int minrun = computeMinrun(n);
-    int i = 0;
-    while (i < n) {
-        int ascendingRun = findAscendingRun(arr, i, n, ascending);
-        if (ascendingRun < minrun && i + ascendingRun < n) {
-            int descendingRun = findDescendingRun(arr, i + ascendingRun, n, ascending);
-            int totalRun = ascendingRun + descendingRun;
+        if (minGallop > MIN_GALLOP) {
+            minGallop = MIN_GALLOP;
+        }
+    }
 
-            if (totalRun < minrun) {
-                totalRun = std::min(minrun, n - i);
+    void mergeCollapse(DynamicArray<T>& arr, bool ascending) {
+        while (runs.size() > 1) {
+            Run Z = runs.top();
+            runs.pop();
+            Run Y = runs.top();
+            runs.pop();
+            
+            bool hasX = !runs.empty();
+            Run X = hasX ? runs.top() : Run(0, 0);
+            
+      
+            if (hasX && X.length <= Y.length + Z.length) {
+                
+                if (X.length < Z.length) {
+                    
+                    runs.pop();
+                    merge(arr, X.start, X.start + X.length - 1, X.start + X.length + Y.length - 1, ascending);
+                    runs.push(Run(X.start, X.length + Y.length));
+                    runs.push(Z);
+                } else {
+                   
+                    merge(arr, Y.start, Y.start + Y.length - 1, Y.start + Y.length + Z.length - 1, ascending);
+                    runs.push(Run(Y.start, Y.length + Z.length));
+                }
+            } else if (Y.length <= Z.length) {
+               
+                merge(arr, Y.start, Y.start + Y.length - 1, Y.start + Y.length + Z.length - 1, ascending);
+                runs.push(Run(Y.start, Y.length + Z.length));
+            } else {
+                
+                runs.push(Y);
+                runs.push(Z);
+                break;
             }
+        }
+    }
 
-            if (descendingRun > 0) {
-                reverse(arr, i + ascendingRun, i + totalRun - 1);
+    void forceMergeCollapse(DynamicArray<T>& arr, bool ascending) {
+        while (runs.size() > 1) {
+            Run Z = runs.top();
+            runs.pop();
+            Run Y = runs.top();
+            runs.pop();
+            
+            bool hasX = !runs.empty();
+            
+           
+            if (hasX) {
+                Run X = runs.top();
+                if (X.length < Z.length) {
+                 
+                    runs.pop(); 
+                    merge(arr, X.start, X.start + X.length - 1, X.start + X.length + Y.length - 1, ascending);
+                    runs.push(Run(X.start, X.length + Y.length));
+                    runs.push(Z);
+                } else {
+                   
+                    merge(arr, Y.start, Y.start + Y.length - 1, Y.start + Y.length + Z.length - 1, ascending);
+                    runs.push(Run(Y.start, Y.length + Z.length));
+                }
+            } else {
+                
+                merge(arr, Y.start, Y.start + Y.length - 1, Y.start + Y.length + Z.length - 1, ascending);
+                runs.push(Run(Y.start, Y.length + Z.length));
             }
+        }
+    }
 
-            if (totalRun > ascendingRun) {
-                insertionSort(arr, i, i + totalRun - 1, ascending);
+    int findNextRun(DynamicArray<T>& arr, int start, int end, bool ascending) {
+        if (start >= end - 1) return end - start;
+        
+        
+        int runLength = 2;
+        
+        
+        bool isIncreasing = (ascending && arr[start] <= arr[start + 1]) || 
+                           (!ascending && arr[start] >= arr[start + 1]);
+        
+        if (isIncreasing) {
+            
+            for (int i = start + 2; i < end; i++) {
+                if ((ascending && arr[i-1] > arr[i]) || (!ascending && arr[i-1] < arr[i])) {
+                    break;
+                }
+                runLength++;
+            }
+        } else {
+            
+            for (int i = start + 2; i < end; i++) {
+                if ((ascending && arr[i-1] < arr[i]) || (!ascending && arr[i-1] > arr[i])) {
+                    break;
+                }
+                runLength++;
+            }
+         
+            reverse(arr, start, start + runLength - 1);
+        }
+        
+        return runLength;
+    }
+
+public:
+    void sort(DynamicArray<T>& arr, int n, bool ascending = true) {
+        if (n < 2) return;
+        
+        while (!runs.empty()) runs.pop();
+        
+        minGallop = MIN_GALLOP;
+        int minrun = computeMinrun(n);
+        int current = 0;
+        
+        while (current < n) {
+            int remaining = n - current;
+            if (remaining < 2) {
+                runs.push(Run(current, 1));
+                current++;
+                continue;
             }
             
-            i += totalRun;
-        } else {
-            if (ascendingRun < minrun) {
-                ascendingRun = std::min(minrun, n - i);
-                insertionSort(arr, i, i + ascendingRun - 1, ascending);
+            int runLength = findNextRun(arr, current, n, ascending);
+            
+            if (runLength < minrun) {
+                int targetLength = std::min(minrun, n - current);
+                insertionSort(arr, current, current + targetLength - 1, ascending);
+                runLength = targetLength;
             }
-            i += ascendingRun;
+            
+            runs.push(Run(current, runLength));
+            
+            mergeCollapse(arr, ascending);
+            
+            current += runLength;
+        }
+        
+        forceMergeCollapse(arr, ascending);
+        
+        if (runs.size() != 1) {
+            while (runs.size() > 1) {
+                Run Z = runs.top();
+                runs.pop();
+                Run Y = runs.top();
+                runs.pop();
+                
+                merge(arr, Y.start, Y.start + Y.length - 1, Y.start + Y.length + Z.length - 1, ascending);
+                runs.push(Run(Y.start, Y.length + Z.length));
+            }
         }
     }
-    for (int size = minrun; size < n; size = 2 * size) {
-        for (int left = 0; left < n; left += 2 * size) {
-            int mid = left + size - 1;
-            int right = std::min((left + 2 * size - 1), (n - 1));
-
-            if (mid < right)
-                merge(arr, left, mid, right, ascending);
-        }
-    }
-}
 };
 
 #endif

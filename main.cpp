@@ -31,7 +31,7 @@ int main() {
         
         int choice;
         bool arrayCreated = false;
-        bool ascending = true; // true for ascending, false for descending
+        bool ascending = true;
         
         DynamicArray<int> intArray;
         DynamicArray<char> charArray;
